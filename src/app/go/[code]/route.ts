@@ -6,6 +6,11 @@ export async function GET(
   { params }: { params: Promise<{ code: string }> },
 ) {
   const { code } = await params;
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   const supabase = createServiceClient();
 
   const { data: link } = await supabase
