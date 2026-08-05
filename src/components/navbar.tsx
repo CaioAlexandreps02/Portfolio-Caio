@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CaioPortoLogo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/logout-button";
 import { getUser } from "@/lib/supabase/auth";
@@ -7,35 +8,42 @@ export async function Navbar() {
   const user = await getUser();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
-      <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
-          Caio Porto
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-background/90">
+      <nav className="mx-auto flex max-w-[92rem] items-center justify-between gap-6 px-5 py-4 sm:px-8">
+        <Link
+          href="/"
+          className="block text-foreground transition-colors hover:text-primary"
+        >
+          <CaioPortoLogo className="h-10 w-[9.8rem]" />
         </Link>
-        <div className="flex items-center gap-6">
+
+        <div className="hidden items-center gap-10 md:flex">
           <Link
             href="/#projetos"
-            className="text-sm text-muted transition-colors hover:text-foreground"
+            className="text-base font-medium text-foreground transition-colors hover:text-primary"
           >
             Projetos
           </Link>
           <Link
             href="/sobre"
-            className="text-sm text-muted transition-colors hover:text-foreground"
+            className="text-base font-medium text-foreground transition-colors hover:text-primary"
           >
             Sobre
           </Link>
+        </div>
+
+        <div className="flex items-center gap-3">
           {user ? (
             <>
               <Link
                 href="/admin/configuracoes"
-                className="text-sm text-muted transition-colors hover:text-foreground"
+                className="hidden text-sm text-muted transition-colors hover:text-foreground lg:block"
               >
-                Configurações
+                Configuracoes
               </Link>
               <Link
                 href="/admin/links"
-                className="text-sm text-muted transition-colors hover:text-foreground"
+                className="hidden text-sm text-muted transition-colors hover:text-foreground lg:block"
               >
                 Links
               </Link>
@@ -43,10 +51,10 @@ export async function Navbar() {
             </>
           ) : (
             <Link
-              href="/login"
-              className="text-sm text-muted transition-colors hover:text-foreground"
+              href="/sobre"
+              className="hidden rounded-[4px] bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-background sm:inline-flex"
             >
-              Entrar
+              Falar comigo <span className="ml-3">-&gt;</span>
             </Link>
           )}
           <ThemeToggle />

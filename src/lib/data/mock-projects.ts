@@ -1,14 +1,10 @@
 import type { Project } from "@/types/database";
 
-/**
- * Dados de exemplo — substituir por consulta ao Supabase quando o projeto existir.
- * Ver getSiteSettings() em src/lib/data/site-settings.ts para o padrão a seguir.
- */
 export const MOCK_PROJECTS: Project[] = [
   {
     id: "1",
     slug: "identidade-visual-turbo-diesel",
-    title: "Identidade Visual — Kit Turbo Diesel",
+    title: "Identidade Visual - Kit Turbo Diesel",
     type: "design",
     description:
       "Criação de peças de campanha para lançamento de linha de kits turbo, com foco em performance e confiança técnica.",
@@ -65,7 +61,7 @@ export const MOCK_PROJECTS: Project[] = [
   {
     id: "4",
     slug: "site-institucional-loja",
-    title: "Site Institucional — Loja",
+    title: "Site Institucional - Loja",
     type: "sites",
     description:
       "Site institucional responsivo com catálogo de produtos e formulário de contato.",
@@ -84,7 +80,7 @@ export const MOCK_PROJECTS: Project[] = [
   {
     id: "5",
     slug: "estrategia-instagram-q1",
-    title: "Estratégia de Conteúdo — Instagram Q1",
+    title: "Estratégia de Conteúdo - Instagram Q1",
     type: "social_media",
     description:
       "Planejamento e execução de calendário de conteúdo trimestral, com crescimento consistente de engajamento.",

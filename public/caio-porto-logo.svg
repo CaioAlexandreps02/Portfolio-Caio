@@ -1,0 +1,5 @@
+<svg viewBox="0 0 188 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Caio Porto">
+  <path d="M26.5 11.5H22C13.99 11.5 7.5 17.99 7.5 26S13.99 40.5 22 40.5H26.5" stroke="#0B6DFF" stroke-width="9" stroke-linecap="round"/>
+  <path d="M27.5 11.5H40.25C45.36 11.5 49.5 15.64 49.5 20.75S45.36 30 40.25 30H27.5V40.5" stroke="#F8FBFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="65" y="32" fill="#F8FBFF" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="800" letter-spacing="-0.9">Caio Porto</text>
+</svg>

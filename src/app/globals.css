@@ -3,26 +3,29 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --surface: #f8fafc;
-  --border: #e2e8f0;
-  --primary: #2563eb;
+  --background: oklch(0.985 0.004 260);
+  --foreground: oklch(0.17 0.035 260);
+  --surface: oklch(0.955 0.015 255);
+  --border: oklch(0.84 0.03 255);
+  --primary: oklch(0.55 0.24 260);
   --primary-foreground: #ffffff;
-  --muted: #64748b;
-  /* vermelho reservado pra erros/ações destrutivas — não usar em elementos decorativos/de marca */
-  --danger: #dc2626;
+  --muted: oklch(0.42 0.04 255);
+  --accent: oklch(0.83 0.22 126);
+  --coral: oklch(0.66 0.22 28);
+  --danger: oklch(0.58 0.22 28);
 }
 
 .dark {
-  --background: #0a0e17;
-  --foreground: #e8edf7;
-  --surface: #12182b;
-  --border: #232b45;
-  --primary: #5b8def;
-  --primary-foreground: #0a0e17;
-  --muted: #8a93ab;
-  --danger: #f87171;
+  --background: oklch(0.125 0.04 258);
+  --foreground: oklch(0.96 0.015 255);
+  --surface: oklch(0.19 0.06 258);
+  --border: oklch(0.31 0.065 258);
+  --primary: oklch(0.62 0.25 260);
+  --primary-foreground: oklch(0.985 0.004 260);
+  --muted: oklch(0.78 0.035 255);
+  --accent: oklch(0.86 0.24 126);
+  --coral: oklch(0.7 0.22 28);
+  --danger: oklch(0.72 0.22 28);
 }
 
 @theme inline {
@@ -33,12 +36,113 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-coral: var(--coral);
   --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
+  min-width: 320px;
   background: var(--background);
   color: var(--foreground);
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+::selection {
+  background: var(--accent);
+  color: oklch(0.12 0.04 258);
+}
+
+.home-shell {
+  background:
+    radial-gradient(circle at 78% 10%, oklch(0.28 0.17 260 / 0.46), transparent 28rem),
+    linear-gradient(180deg, oklch(0.1 0.045 258) 0%, oklch(0.13 0.038 258) 58%, var(--background) 100%);
+}
+
+.portfolio-mark {
+  position: relative;
+  display: inline-flex;
+  height: 2.15rem;
+  width: 2.15rem;
+  align-items: center;
+  justify-content: center;
+  color: var(--foreground);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.portfolio-mark::before,
+.portfolio-mark::after {
+  content: "";
+  position: absolute;
+  inset: 0.25rem;
+  border: 0.38rem solid var(--primary);
+  border-right-color: transparent;
+  border-radius: 999px;
+}
+
+.portfolio-mark::after {
+  inset: 0.58rem 0.22rem 0.58rem 0.78rem;
+  border-color: var(--foreground);
+  border-left-color: transparent;
+}
+
+.portfolio-mark span {
+  position: relative;
+  transform: translateX(0.04rem);
+  font-size: 0.98rem;
+}
+
+.project-visual {
+  background:
+    radial-gradient(circle at 82% 18%, oklch(0.78 0.22 126 / 0.22), transparent 9rem),
+    linear-gradient(145deg, oklch(0.2 0.12 260), oklch(0.13 0.045 258) 58%, oklch(0.09 0.03 258));
+}
+
+.project-visual-coral {
+  background:
+    radial-gradient(circle at 76% 30%, oklch(0.88 0.22 126 / 0.3), transparent 8rem),
+    linear-gradient(145deg, var(--coral), oklch(0.34 0.13 35) 48%, oklch(0.1 0.035 258));
+}
+
+.project-visual-site {
+  background:
+    linear-gradient(180deg, oklch(0.12 0.04 258 / 0.15), oklch(0.1 0.04 258 / 0.9)),
+    linear-gradient(135deg, oklch(0.32 0.18 260), oklch(0.12 0.04 258));
+}
+
+.project-visual-light {
+  background:
+    radial-gradient(circle at 70% 20%, oklch(0.86 0.23 126 / 0.35), transparent 8rem),
+    linear-gradient(135deg, oklch(0.34 0.22 260), oklch(0.16 0.07 258));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

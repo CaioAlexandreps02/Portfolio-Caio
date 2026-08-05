@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Project } from "@/types/database";
 import { PROJECT_TYPE_LABELS } from "@/lib/project-types";
+import { ProjectVisual } from "@/components/project-visual";
 
 export function ProjectCard({
   project,
@@ -11,12 +12,12 @@ export function ProjectCard({
   isAdmin?: boolean;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-border bg-surface transition-colors hover:border-primary">
+    <div className="group relative overflow-hidden rounded-[12px] border border-border bg-surface transition-colors hover:border-primary">
       {isAdmin && (
         <Link
           href={`/admin/projetos/${project.slug}/editar`}
           aria-label={`Editar ${project.title}`}
-          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-foreground shadow-sm transition-opacity hover:bg-primary hover:text-primary-foreground"
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background/95 text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -34,23 +35,28 @@ export function ProjectCard({
       )}
 
       <Link href={`/projetos/${project.slug}`}>
-        <div className="relative aspect-video w-full overflow-hidden bg-border">
-          {project.cover_url && (
+        <div className="relative aspect-[1.42] w-full overflow-hidden bg-border">
+          {project.cover_url ? (
             <Image
               src={project.cover_url}
               alt={project.title}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
+          ) : (
+            <ProjectVisual type={project.type} title={project.title} compact />
           )}
         </div>
-        <div className="p-4">
-          <span className="text-xs font-medium text-primary">
+        <div className="p-5">
+          <span className="text-xs font-bold text-primary">
             {PROJECT_TYPE_LABELS[project.type]}
           </span>
-          <h3 className="mt-1 text-base font-semibold text-foreground">
+          <h3 className="mt-2 text-xl font-black leading-tight tracking-[-0.03em] text-foreground">
             {project.title}
           </h3>
+          <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted">
+            {project.description}
+          </p>
         </div>
       </Link>
     </div>

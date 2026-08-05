@@ -26,7 +26,7 @@ export function ProjectFilterGrid({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3">
         <FilterButton
           label="Todos"
           active={activeType === "todos"}
@@ -42,7 +42,7 @@ export function ProjectFilterGrid({
         ))}
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((project) => (
           <ProjectCard
             key={project.id}
@@ -68,10 +68,10 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+      className={`min-w-28 rounded-[6px] border px-5 py-3 text-sm font-medium transition-colors ${
         active
           ? "border-primary bg-primary text-primary-foreground"
-          : "border-border text-muted hover:text-foreground"
+          : "border-border bg-background/20 text-foreground hover:border-primary"
       }`}
     >
       {label}
