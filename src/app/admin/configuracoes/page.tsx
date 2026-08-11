@@ -1,17 +1,21 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/auth";
 import { getSiteSettings } from "@/lib/data/site-settings";
 import { getPublishedProjects } from "@/lib/data/projects";
+import { getGoogleDriveConnectionStatus } from "@/lib/google/connection";
 import { SiteSettingsForm } from "@/components/site-settings-form";
 import { FeaturedOrderList } from "@/components/featured-order-list";
+import { GoogleDriveConnectionCard } from "@/components/google-drive-connection-card";
 
 export default async function ConfiguracoesPage() {
   const user = await getUser();
   if (!user) redirect("/login");
 
-  const [settings, projects] = await Promise.all([
+  const [settings, projects, googleDrive] = await Promise.all([
     getSiteSettings(),
     getPublishedProjects(),
+    getGoogleDriveConnectionStatus(),
   ]);
   const featured = projects
     .filter((p) => p.featured)
@@ -22,6 +26,20 @@ export default async function ConfiguracoesPage() {
       <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
 
       <section className="mt-10">
+        <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
+          Integrações
+        </h2>
+        <div className="mt-4">
+          <Suspense fallback={null}>
+            <GoogleDriveConnectionCard
+              connected={googleDrive.connected}
+              connectedAt={googleDrive.connectedAt}
+            />
+          </Suspense>
+        </div>
+      </section>
+
+      <section className="mt-12">
         <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
           Sobre e contato
         </h2>

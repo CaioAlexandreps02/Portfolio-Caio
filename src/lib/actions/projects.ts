@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   MetricHighlight,
   PrintMockup,
+  PrintPieceType,
   ProjectStatus,
+  ProjectSubcategory,
   ProjectType,
 } from "@/types/database";
 
@@ -22,6 +24,8 @@ export type ProjectFormPayload = {
   featured: boolean;
   status: ProjectStatus;
   sort_order: number;
+  subcategory: ProjectSubcategory | null;
+  print_piece_type: PrintPieceType | null;
   print_mockup: PrintMockup | null;
 };
 

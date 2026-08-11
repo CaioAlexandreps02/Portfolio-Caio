@@ -136,6 +136,24 @@ Decisão: **não usar Supabase Storage** para imagens/vídeos dos projetos, pra 
 
 - Mesmo esquema das imagens de projeto: link do Google Drive, convertido pro formato direto, salvo em `site_settings.about_photo_url`.
 
+### Editor do mockup 3D — Google Picker nativo (decisão de 04/08/2026)
+
+- Exceção ao fluxo de "colar link": no editor visual do folder (`/admin/projetos/novo|editar`, quando `print_piece_type = 'folder'`), cada uma das 4 partes é escolhida via **seletor nativo do Google Drive** (Google Picker API), não por link colado.
+- O restante do site (capa de projeto, galeria, foto do "Sobre") continua no fluxo de colar link — o Picker é só pro editor do mockup 3D por agora.
+
+### Conexão persistente com o Google Drive (decisão de 04/08/2026)
+
+- Em vez de autorizar a cada uso (popup de consentimento toda hora), o Caio conecta **uma vez** em `/admin/configuracoes` → seção "Integrações" → "Conectar Google Drive".
+- Fluxo OAuth **authorization code** (redirecionamento, não popup):
+  - `/api/auth/google/start` — gera um `state` (proteção CSRF, guardado num cookie httpOnly de 5min) e redireciona pro consentimento do Google (`access_type=offline`, `prompt=consent` — garante que sempre volta um `refresh_token`).
+  - `/api/auth/google/callback` — valida o `state`, troca o `code` pelos tokens, guarda o `refresh_token`.
+- **`refresh_token` guardado na tabela `google_drive_connection`, sem NENHUMA policy de RLS** — só a service role (uso server-side) consegue ler/escrever. Nunca trafega pro navegador.
+- Quando o editor do mockup precisa abrir o Picker, busca um `access_token` novo (validade curta, ~1h) via `/api/google/access-token`, que usa o `refresh_token` guardado — sem popup, sem fricção.
+- Credenciais no Google Cloud Console: **OAuth Client ID** + **API Key** (públicas, `NEXT_PUBLIC_GOOGLE_CLIENT_ID` / `NEXT_PUBLIC_GOOGLE_API_KEY`) + **Client Secret** (`GOOGLE_CLIENT_SECRET`, só server-side, nunca `NEXT_PUBLIC_`). Redirect URI precisa estar cadastrado no Cloud Console: `{SITE_URL}/api/auth/google/callback`.
+- Escopo OAuth usado: `drive.file` (acesso só aos arquivos que o Caio efetivamente selecionar pelo picker).
+- Ao escolher um arquivo no picker, o app tenta automaticamente criar a permissão "qualquer um com o link pode visualizar" nele via API (`permissions.create`) — se isso falhar por alguma restrição da conta, o Caio precisa compartilhar esse arquivo manualmente.
+- "Desconectar" revoga o token no Google (`/revoke`) e limpa o registro guardado.
+
 ---
 
 ## Banco de Dados — Supabase
@@ -158,7 +176,9 @@ Decisão: **não usar Supabase Storage** para imagens/vídeos dos projetos, pra 
 | `featured` | boolean | Se aparece em destaque na home |
 | `status` | enum | `draft` / `published` / `archived` |
 | `sort_order` | integer | Ordem de exibição |
-| `print_mockup` | jsonb (opcional) | Mockup 3D de folder bifold (uma dobra, formato A4): `{ front_cover, back_cover, inner_left, inner_right }` — as 4 artes impressas (capa, contra-capa, interna esquerda, interna direita). Quando presente, a página do projeto renderiza o mockup 3D interativo (abre ao clicar, capa de frente / contra-capa visível ao orbitar por trás) no lugar/além da galeria normal. Decisão de 04/08/2026: não é uma categoria nova — é um projeto comum do tipo `design`, só com esse campo preenchido. |
+| `subcategory` | enum (opcional) | Subcategoria dentro do tipo `design`. Hoje só `impressos`. Não aparece como filtro público — é só organização/gatilho de funcionalidade no admin. |
+| `print_piece_type` | enum (opcional) | Tipo de peça impressa dentro de `subcategory = 'impressos'`. Hoje só `folder`. Selecionar "Folder Impresso" no admin revela o editor visual do mockup 3D. |
+| `print_mockup` | jsonb (opcional) | Mockup 3D de folder bifold (uma dobra, formato A4): `{ front_cover, back_cover, inner_left, inner_right }` — as 4 artes impressas (capa, contra-capa, interna esquerda, interna direita). Quando presente, a página do projeto renderiza o mockup 3D interativo (abre ao clicar, capa de frente / contra-capa visível ao orbitar por trás) no lugar/além da galeria normal. Decisão de 04/08/2026: não é uma categoria nova no filtro público — é um projeto comum do tipo `design`, só com esses campos preenchidos. |
 | `created_at` | timestamp | Data de criação |
 | `updated_at` | timestamp | Última atualização |
 

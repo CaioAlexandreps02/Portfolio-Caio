@@ -7,6 +7,12 @@ export type ProjectType =
 
 export type ProjectStatus = "draft" | "published" | "archived";
 
+/** Subcategoria dentro do tipo "design". Hoje só existe "impressos". */
+export type ProjectSubcategory = "impressos";
+
+/** Tipo de peça impressa dentro da subcategoria "impressos". Hoje só "folder". */
+export type PrintPieceType = "folder";
+
 export type MetricHighlight = {
   label: string;
   value: string;
@@ -39,6 +45,8 @@ export type Project = {
   featured: boolean;
   status: ProjectStatus;
   sort_order: number;
+  subcategory: ProjectSubcategory | null;
+  print_piece_type: PrintPieceType | null;
   print_mockup: PrintMockup | null;
   created_at: string;
   updated_at: string;
@@ -64,6 +72,16 @@ export type TrackedLink = {
   created_at: string;
 };
 
+/**
+ * Conexão persistente com o Google Drive (refresh token). Sem policy de
+ * RLS nenhuma — só acessível via service role, nunca no navegador.
+ */
+export type GoogleDriveConnection = {
+  id: number;
+  refresh_token: string | null;
+  connected_at: string | null;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -85,6 +103,12 @@ export type Database = {
           click_count?: number;
         };
         Update: Partial<Omit<TrackedLink, "id" | "created_at">>;
+        Relationships: [];
+      };
+      google_drive_connection: {
+        Row: GoogleDriveConnection;
+        Insert: Partial<GoogleDriveConnection>;
+        Update: Partial<GoogleDriveConnection>;
         Relationships: [];
       };
     };

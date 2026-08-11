@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import type {
   MetricHighlight,
   PrintMockup,
+  PrintPieceType,
   Project,
   ProjectStatus,
+  ProjectSubcategory,
   ProjectType,
 } from "@/types/database";
 import { PROJECT_TYPE_LABELS, PROJECT_TYPES } from "@/lib/project-types";
@@ -19,11 +21,20 @@ import {
   updateProject,
   type ProjectFormPayload,
 } from "@/lib/actions/projects";
+import { FolderMockupEditor } from "@/components/folder-mockup-editor";
 
 const STATUS_LABELS: Record<ProjectStatus, string> = {
   draft: "Rascunho",
   published: "Publicado",
   archived: "Arquivado",
+};
+
+const SUBCATEGORY_LABELS: Record<ProjectSubcategory, string> = {
+  impressos: "Impressos",
+};
+
+const PRINT_PIECE_TYPE_LABELS: Record<PrintPieceType, string> = {
+  folder: "Folder Impresso",
 };
 
 const inputClass =
@@ -56,18 +67,14 @@ export function ProjectForm({ project }: { project?: Project }) {
     project?.status ?? "draft",
   );
 
-  const [hasMockup, setHasMockup] = useState(Boolean(project?.print_mockup));
-  const [mockupFrontCover, setMockupFrontCover] = useState(
-    project?.print_mockup?.front_cover ?? "",
+  const [subcategory, setSubcategory] = useState<ProjectSubcategory | "">(
+    project?.subcategory ?? "",
   );
-  const [mockupBackCover, setMockupBackCover] = useState(
-    project?.print_mockup?.back_cover ?? "",
+  const [printPieceType, setPrintPieceType] = useState<PrintPieceType | "">(
+    project?.print_piece_type ?? "",
   );
-  const [mockupInnerLeft, setMockupInnerLeft] = useState(
-    project?.print_mockup?.inner_left ?? "",
-  );
-  const [mockupInnerRight, setMockupInnerRight] = useState(
-    project?.print_mockup?.inner_right ?? "",
+  const [mockup, setMockup] = useState<Partial<PrintMockup>>(
+    project?.print_mockup ?? {},
   );
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -131,26 +138,21 @@ export function ProjectForm({ project }: { project?: Project }) {
 
     setSaving(true);
 
+    const subcategoryValue = type === "design" && subcategory ? subcategory : null;
+    const printPieceTypeValue =
+      subcategoryValue === "impressos" && printPieceType ? printPieceType : null;
+
     let print_mockup: PrintMockup | null = null;
-    if (hasMockup) {
-      if (
-        !mockupFrontCover ||
-        !mockupBackCover ||
-        !mockupInnerLeft ||
-        !mockupInnerRight
-      ) {
+    if (printPieceTypeValue === "folder") {
+      const { front_cover, back_cover, inner_left, inner_right } = mockup;
+      if (!front_cover || !back_cover || !inner_left || !inner_right) {
         setError(
-          "Preencha as 4 imagens do mockup (capa, contra-capa e as 2 partes internas), ou desative o mockup.",
+          "Selecione as 4 imagens do mockup (capa, contra-capa e as 2 partes internas).",
         );
         setSaving(false);
         return;
       }
-      print_mockup = {
-        front_cover: driveShareLinkToDirectUrl(mockupFrontCover),
-        back_cover: driveShareLinkToDirectUrl(mockupBackCover),
-        inner_left: driveShareLinkToDirectUrl(mockupInnerLeft),
-        inner_right: driveShareLinkToDirectUrl(mockupInnerRight),
-      };
+      print_mockup = { front_cover, back_cover, inner_left, inner_right };
     }
 
     const payload: ProjectFormPayload = {
@@ -167,6 +169,8 @@ export function ProjectForm({ project }: { project?: Project }) {
       featured,
       status,
       sort_order: sortOrder,
+      subcategory: subcategoryValue,
+      print_piece_type: printPieceTypeValue,
       print_mockup,
     };
 
@@ -237,7 +241,14 @@ export function ProjectForm({ project }: { project?: Project }) {
         <select
           id="type"
           value={type}
-          onChange={(e) => setType(e.target.value as ProjectType)}
+          onChange={(e) => {
+            const next = e.target.value as ProjectType;
+            setType(next);
+            if (next !== "design") {
+              setSubcategory("");
+              setPrintPieceType("");
+            }
+          }}
           className={inputClass}
         >
           {PROJECT_TYPES.map((t) => (
@@ -247,6 +258,54 @@ export function ProjectForm({ project }: { project?: Project }) {
           ))}
         </select>
       </div>
+
+      {type === "design" && (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="subcategory" className={labelClass}>
+            Subcategoria
+          </label>
+          <select
+            id="subcategory"
+            value={subcategory}
+            onChange={(e) => {
+              const next = e.target.value as ProjectSubcategory | "";
+              setSubcategory(next);
+              if (next !== "impressos") setPrintPieceType("");
+            }}
+            className={inputClass}
+          >
+            <option value="">(nenhuma)</option>
+            {Object.entries(SUBCATEGORY_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {subcategory === "impressos" && (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="print_piece_type" className={labelClass}>
+            Tipo de impresso
+          </label>
+          <select
+            id="print_piece_type"
+            value={printPieceType}
+            onChange={(e) =>
+              setPrintPieceType(e.target.value as PrintPieceType | "")
+            }
+            className={inputClass}
+          >
+            <option value="">(nenhum)</option>
+            {Object.entries(PRINT_PIECE_TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="description" className={labelClass}>
@@ -355,77 +414,16 @@ export function ProjectForm({ project }: { project?: Project }) {
         />
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
-        <label className="flex items-center gap-2 text-sm font-medium">
-          <input
-            type="checkbox"
-            checked={hasMockup}
-            onChange={(e) => setHasMockup(e.target.checked)}
-          />
-          Este projeto é uma peça impressa com mockup 3D
-        </label>
-
-        {hasMockup && (
-          <div className="flex flex-col gap-3">
-            <p className="text-xs text-muted">
-              Folder bifold (uma dobra, formato A4) — cole o link de
-              compartilhamento do Google Drive de cada uma das 4 artes.
-            </p>
-
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="mockup_front" className={labelClass}>
-                Capa — link do Google Drive
-              </label>
-              <input
-                id="mockup_front"
-                value={mockupFrontCover}
-                onChange={(e) => setMockupFrontCover(e.target.value)}
-                placeholder="https://drive.google.com/file/d/..."
-                className={inputClass}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="mockup_back" className={labelClass}>
-                Contra-capa — link do Google Drive
-              </label>
-              <input
-                id="mockup_back"
-                value={mockupBackCover}
-                onChange={(e) => setMockupBackCover(e.target.value)}
-                placeholder="https://drive.google.com/file/d/..."
-                className={inputClass}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="mockup_inner_left" className={labelClass}>
-                Parte interna esquerda — link do Google Drive
-              </label>
-              <input
-                id="mockup_inner_left"
-                value={mockupInnerLeft}
-                onChange={(e) => setMockupInnerLeft(e.target.value)}
-                placeholder="https://drive.google.com/file/d/..."
-                className={inputClass}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="mockup_inner_right" className={labelClass}>
-                Parte interna direita — link do Google Drive
-              </label>
-              <input
-                id="mockup_inner_right"
-                value={mockupInnerRight}
-                onChange={(e) => setMockupInnerRight(e.target.value)}
-                placeholder="https://drive.google.com/file/d/..."
-                className={inputClass}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+      {printPieceType === "folder" && (
+        <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+          <span className="text-sm font-medium">Mockup 3D do folder</span>
+          <p className="text-xs text-muted">
+            Clique em cada parte pra escolher a imagem direto do seu Google
+            Drive.
+          </p>
+          <FolderMockupEditor value={mockup} onChange={setMockup} />
+        </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="metrics" className={labelClass}>
