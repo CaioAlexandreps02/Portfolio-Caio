@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type {
   MetricHighlight,
+  PrintMockup,
   Project,
   ProjectStatus,
   ProjectType,
@@ -53,6 +54,20 @@ export function ProjectForm({ project }: { project?: Project }) {
   const [sortOrder, setSortOrder] = useState(project?.sort_order ?? 0);
   const [status, setStatus] = useState<ProjectStatus>(
     project?.status ?? "draft",
+  );
+
+  const [hasMockup, setHasMockup] = useState(Boolean(project?.print_mockup));
+  const [mockupFrontCover, setMockupFrontCover] = useState(
+    project?.print_mockup?.front_cover ?? "",
+  );
+  const [mockupBackCover, setMockupBackCover] = useState(
+    project?.print_mockup?.back_cover ?? "",
+  );
+  const [mockupInnerLeft, setMockupInnerLeft] = useState(
+    project?.print_mockup?.inner_left ?? "",
+  );
+  const [mockupInnerRight, setMockupInnerRight] = useState(
+    project?.print_mockup?.inner_right ?? "",
   );
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -116,6 +131,28 @@ export function ProjectForm({ project }: { project?: Project }) {
 
     setSaving(true);
 
+    let print_mockup: PrintMockup | null = null;
+    if (hasMockup) {
+      if (
+        !mockupFrontCover ||
+        !mockupBackCover ||
+        !mockupInnerLeft ||
+        !mockupInnerRight
+      ) {
+        setError(
+          "Preencha as 4 imagens do mockup (capa, contra-capa e as 2 partes internas), ou desative o mockup.",
+        );
+        setSaving(false);
+        return;
+      }
+      print_mockup = {
+        front_cover: driveShareLinkToDirectUrl(mockupFrontCover),
+        back_cover: driveShareLinkToDirectUrl(mockupBackCover),
+        inner_left: driveShareLinkToDirectUrl(mockupInnerLeft),
+        inner_right: driveShareLinkToDirectUrl(mockupInnerRight),
+      };
+    }
+
     const payload: ProjectFormPayload = {
       slug: slugify(slug),
       title,
@@ -130,6 +167,7 @@ export function ProjectForm({ project }: { project?: Project }) {
       featured,
       status,
       sort_order: sortOrder,
+      print_mockup,
     };
 
     try {
@@ -315,6 +353,78 @@ export function ProjectForm({ project }: { project?: Project }) {
           placeholder="https://www.youtube.com/watch?v=..."
           className={inputClass}
         />
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={hasMockup}
+            onChange={(e) => setHasMockup(e.target.checked)}
+          />
+          Este projeto é uma peça impressa com mockup 3D
+        </label>
+
+        {hasMockup && (
+          <div className="flex flex-col gap-3">
+            <p className="text-xs text-muted">
+              Folder bifold (uma dobra, formato A4) — cole o link de
+              compartilhamento do Google Drive de cada uma das 4 artes.
+            </p>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="mockup_front" className={labelClass}>
+                Capa — link do Google Drive
+              </label>
+              <input
+                id="mockup_front"
+                value={mockupFrontCover}
+                onChange={(e) => setMockupFrontCover(e.target.value)}
+                placeholder="https://drive.google.com/file/d/..."
+                className={inputClass}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="mockup_back" className={labelClass}>
+                Contra-capa — link do Google Drive
+              </label>
+              <input
+                id="mockup_back"
+                value={mockupBackCover}
+                onChange={(e) => setMockupBackCover(e.target.value)}
+                placeholder="https://drive.google.com/file/d/..."
+                className={inputClass}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="mockup_inner_left" className={labelClass}>
+                Parte interna esquerda — link do Google Drive
+              </label>
+              <input
+                id="mockup_inner_left"
+                value={mockupInnerLeft}
+                onChange={(e) => setMockupInnerLeft(e.target.value)}
+                placeholder="https://drive.google.com/file/d/..."
+                className={inputClass}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="mockup_inner_right" className={labelClass}>
+                Parte interna direita — link do Google Drive
+              </label>
+              <input
+                id="mockup_inner_right"
+                value={mockupInnerRight}
+                onChange={(e) => setMockupInnerRight(e.target.value)}
+                placeholder="https://drive.google.com/file/d/..."
+                className={inputClass}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5">

@@ -7,6 +7,7 @@ import { getUser } from "@/lib/supabase/auth";
 import { PROJECT_TYPE_LABELS } from "@/lib/project-types";
 import { Gallery } from "@/components/gallery";
 import { StatusToggle } from "@/components/status-toggle";
+import { FolderMockup3D } from "@/components/folder-mockup-3d";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -90,6 +91,12 @@ export default async function ProjetoPage({ params }: Props) {
             className="h-full w-full"
             allowFullScreen
           />
+        </div>
+      )}
+
+      {project.print_mockup && (
+        <div className="mt-8">
+          <FolderMockup3D mockup={project.print_mockup} />
         </div>
       )}
 

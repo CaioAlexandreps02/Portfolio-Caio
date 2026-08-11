@@ -12,6 +12,18 @@ export type MetricHighlight = {
   value: string;
 };
 
+/**
+ * Mockup 3D de folder bifold (uma dobra, formato A4) — 2 painéis físicos,
+ * 4 faces impressas. Fechado mostra front_cover (e back_cover ao orbitar
+ * pra trás); abrir revela inner_left + inner_right lado a lado.
+ */
+export type PrintMockup = {
+  front_cover: string;
+  back_cover: string;
+  inner_left: string;
+  inner_right: string;
+};
+
 export type Project = {
   id: string;
   slug: string;
@@ -27,6 +39,7 @@ export type Project = {
   featured: boolean;
   status: ProjectStatus;
   sort_order: number;
+  print_mockup: PrintMockup | null;
   created_at: string;
   updated_at: string;
 };

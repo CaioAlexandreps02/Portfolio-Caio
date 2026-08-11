@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type {
   MetricHighlight,
+  PrintMockup,
   ProjectStatus,
   ProjectType,
 } from "@/types/database";
@@ -21,6 +22,7 @@ export type ProjectFormPayload = {
   featured: boolean;
   status: ProjectStatus;
   sort_order: number;
+  print_mockup: PrintMockup | null;
 };
 
 async function requireUser() {

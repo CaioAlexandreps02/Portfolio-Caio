@@ -158,6 +158,7 @@ Decisão: **não usar Supabase Storage** para imagens/vídeos dos projetos, pra 
 | `featured` | boolean | Se aparece em destaque na home |
 | `status` | enum | `draft` / `published` / `archived` |
 | `sort_order` | integer | Ordem de exibição |
+| `print_mockup` | jsonb (opcional) | Mockup 3D de folder bifold (uma dobra, formato A4): `{ front_cover, back_cover, inner_left, inner_right }` — as 4 artes impressas (capa, contra-capa, interna esquerda, interna direita). Quando presente, a página do projeto renderiza o mockup 3D interativo (abre ao clicar, capa de frente / contra-capa visível ao orbitar por trás) no lugar/além da galeria normal. Decisão de 04/08/2026: não é uma categoria nova — é um projeto comum do tipo `design`, só com esse campo preenchido. |
 | `created_at` | timestamp | Data de criação |
 | `updated_at` | timestamp | Última atualização |
 
