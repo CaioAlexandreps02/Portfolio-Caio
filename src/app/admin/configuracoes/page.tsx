@@ -7,6 +7,7 @@ import { getGoogleDriveConnectionStatus } from "@/lib/google/connection";
 import { SiteSettingsForm } from "@/components/site-settings-form";
 import { FeaturedOrderList } from "@/components/featured-order-list";
 import { GoogleDriveConnectionCard } from "@/components/google-drive-connection-card";
+import { GoogleDriveRootFolderForm } from "@/components/google-drive-root-folder-form";
 
 export default async function ConfiguracoesPage() {
   const user = await getUser();
@@ -29,13 +30,16 @@ export default async function ConfiguracoesPage() {
         <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
           Integrações
         </h2>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col gap-4">
           <Suspense fallback={null}>
             <GoogleDriveConnectionCard
               connected={googleDrive.connected}
               connectedAt={googleDrive.connectedAt}
             />
           </Suspense>
+          <GoogleDriveRootFolderForm
+            folderId={settings?.google_drive_root_folder_id ?? null}
+          />
         </div>
       </section>
 

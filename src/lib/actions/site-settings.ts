@@ -28,6 +28,19 @@ export async function updateSiteSettings(payload: SiteSettingsPayload) {
   if (error) throw new Error(error.message);
 }
 
+export async function updateGoogleDriveRootFolder(
+  folderId: string | null,
+) {
+  const supabase = await requireUser();
+
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ google_drive_root_folder_id: folderId })
+    .eq("id", 1);
+
+  if (error) throw new Error(error.message);
+}
+
 export async function updateFeaturedOrder(orderedIds: string[]) {
   const supabase = await requireUser();
 

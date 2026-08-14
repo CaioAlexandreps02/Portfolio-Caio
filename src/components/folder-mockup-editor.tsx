@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { openDrivePicker } from "@/lib/google-drive-picker";
+import { DriveFolderBrowserModal } from "@/components/drive-folder-browser-modal";
 import type { PrintMockup } from "@/types/database";
 
 type Slot = keyof PrintMockup;
@@ -32,22 +32,11 @@ export function FolderMockupEditor({
   value: PartialMockup;
   onChange: (next: PartialMockup) => void;
 }) {
-  const [error, setError] = useState<string | null>(null);
-  const [loadingSlot, setLoadingSlot] = useState<Slot | null>(null);
+  const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
 
-  async function handlePick(slot: Slot) {
-    setError(null);
-    setLoadingSlot(slot);
-    try {
-      const url = await openDrivePicker();
-      if (url) onChange({ ...value, [slot]: url });
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Erro ao abrir o seletor do Drive.",
-      );
-    } finally {
-      setLoadingSlot(null);
-    }
+  function handleSelect(url: string) {
+    if (activeSlot) onChange({ ...value, [activeSlot]: url });
+    setActiveSlot(null);
   }
 
   function handleClear(slot: Slot) {
@@ -65,8 +54,7 @@ export function FolderMockupEditor({
                 key={key}
                 label={label}
                 value={value[key]}
-                loading={loadingSlot === key}
-                onPick={() => handlePick(key)}
+                onPick={() => setActiveSlot(key)}
                 onClear={() => handleClear(key)}
               />
             ))}
@@ -74,7 +62,12 @@ export function FolderMockupEditor({
         </div>
       ))}
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {activeSlot && (
+        <DriveFolderBrowserModal
+          onClose={() => setActiveSlot(null)}
+          onSelect={handleSelect}
+        />
+      )}
     </div>
   );
 }
@@ -82,13 +75,11 @@ export function FolderMockupEditor({
 function SlotBox({
   label,
   value,
-  loading,
   onPick,
   onClear,
 }: {
   label: string;
   value?: string;
-  loading: boolean;
   onPick: () => void;
   onClear: () => void;
 }) {
@@ -113,11 +104,10 @@ function SlotBox({
         <button
           type="button"
           onClick={onPick}
-          disabled={loading}
-          className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted transition-colors hover:text-primary disabled:opacity-50"
+          className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted transition-colors hover:text-primary"
         >
           <span className="text-2xl leading-none">+</span>
-          <span className="text-xs">{loading ? "Abrindo..." : label}</span>
+          <span className="text-xs">{label}</span>
         </button>
       )}
     </div>

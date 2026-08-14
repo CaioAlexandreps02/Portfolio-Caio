@@ -59,6 +59,7 @@ export type SiteSettings = {
   whatsapp_number: string | null;
   linkedin_url: string | null;
   email: string | null;
+  google_drive_root_folder_id: string | null;
   updated_at: string;
 };
 

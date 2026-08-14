@@ -136,10 +136,12 @@ Decisão: **não usar Supabase Storage** para imagens/vídeos dos projetos, pra 
 
 - Mesmo esquema das imagens de projeto: link do Google Drive, convertido pro formato direto, salvo em `site_settings.about_photo_url`.
 
-### Editor do mockup 3D — Google Picker nativo (decisão de 04/08/2026)
+### Editor do mockup 3D — navegador de pastas do Drive (decisão de 04/08/2026, revisada em 14/08/2026)
 
-- Exceção ao fluxo de "colar link": no editor visual do folder (`/admin/projetos/novo|editar`, quando `print_piece_type = 'folder'`), cada uma das 4 partes é escolhida via **seletor nativo do Google Drive** (Google Picker API), não por link colado.
-- O restante do site (capa de projeto, galeria, foto do "Sobre") continua no fluxo de colar link — o Picker é só pro editor do mockup 3D por agora.
+- Exceção ao fluxo de "colar link": no editor visual do folder (`/admin/projetos/novo|editar`, quando `print_piece_type = 'folder'`), cada uma das 4 partes é escolhida via um **modal próprio de navegação do Google Drive**, não por link colado.
+- **Revisão de 14/08/2026:** o Google Picker nativo foi substituído por um modal construído do zero (`DriveFolderBrowserModal`) que navega pela árvore de pastas do Drive via chamadas server-side à Drive API — a navegação fica **travada dentro de uma pasta raiz configurável** (`site_settings.google_drive_root_folder_id`, definida em Configurações → Integrações, colando o link de compartilhamento da pasta) e suas subpastas; não dá pra sair dela. Mostra todos os tipos de arquivo (não só imagens) ao navegar. Motivo da troca: o Picker nativo do Google mostra o Drive inteiro do Caio, sem como restringir a navegação a uma pasta específica.
+- Rotas server-side: `GET /api/google/drive/list?folderId=` (lista pastas/arquivos; sem `folderId` resolve a pasta raiz configurada) e `POST /api/google/drive/select` (torna o arquivo escolhido público e devolve a URL direta). O access token do Drive nunca é exposto ao navegador — todas as chamadas à Drive API acontecem no servidor.
+- O restante do site (capa de projeto, galeria, foto do "Sobre") continua no fluxo de colar link — esse modal é só pro editor do mockup 3D por agora.
 
 ### Conexão persistente com o Google Drive (decisão de 04/08/2026)
 
@@ -148,10 +150,10 @@ Decisão: **não usar Supabase Storage** para imagens/vídeos dos projetos, pra 
   - `/api/auth/google/start` — gera um `state` (proteção CSRF, guardado num cookie httpOnly de 5min) e redireciona pro consentimento do Google (`access_type=offline`, `prompt=consent` — garante que sempre volta um `refresh_token`).
   - `/api/auth/google/callback` — valida o `state`, troca o `code` pelos tokens, guarda o `refresh_token`.
 - **`refresh_token` guardado na tabela `google_drive_connection`, sem NENHUMA policy de RLS** — só a service role (uso server-side) consegue ler/escrever. Nunca trafega pro navegador.
-- Quando o editor do mockup precisa abrir o Picker, busca um `access_token` novo (validade curta, ~1h) via `/api/google/access-token`, que usa o `refresh_token` guardado — sem popup, sem fricção.
-- Credenciais no Google Cloud Console: **OAuth Client ID** + **API Key** (públicas, `NEXT_PUBLIC_GOOGLE_CLIENT_ID` / `NEXT_PUBLIC_GOOGLE_API_KEY`) + **Client Secret** (`GOOGLE_CLIENT_SECRET`, só server-side, nunca `NEXT_PUBLIC_`). Redirect URI precisa estar cadastrado no Cloud Console: `{SITE_URL}/api/auth/google/callback`.
-- Escopo OAuth usado: `drive.file` (acesso só aos arquivos que o Caio efetivamente selecionar pelo picker).
-- Ao escolher um arquivo no picker, o app tenta automaticamente criar a permissão "qualquer um com o link pode visualizar" nele via API (`permissions.create`) — se isso falhar por alguma restrição da conta, o Caio precisa compartilhar esse arquivo manualmente.
+- As rotas `/api/google/drive/list` e `/api/google/drive/select` usam o `refresh_token` guardado pra buscar um `access_token` novo (validade curta, ~1h) a cada chamada — sem popup, sem fricção.
+- Credenciais no Google Cloud Console: **OAuth Client ID** (público, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`) + **Client Secret** (`GOOGLE_CLIENT_SECRET`, só server-side, nunca `NEXT_PUBLIC_`). Redirect URI precisa estar cadastrado no Cloud Console: `{SITE_URL}/api/auth/google/callback`. (`NEXT_PUBLIC_GOOGLE_API_KEY` era usado só pelo Picker nativo — não é mais necessário desde a revisão de 14/08/2026, mas não tem problema deixar configurado.)
+- Escopo OAuth usado: `drive.file` (acesso só aos arquivos que o Caio efetivamente selecionar).
+- Ao escolher um arquivo no modal, o app tenta automaticamente criar a permissão "qualquer um com o link pode visualizar" nele via API (`permissions.create`) — se isso falhar por alguma restrição da conta, o Caio precisa compartilhar esse arquivo manualmente.
 - "Desconectar" revoga o token no Google (`/revoke`) e limpa o registro guardado.
 
 ---
@@ -196,6 +198,7 @@ Usada pela página `/admin/configuracoes`.
 | `whatsapp_number` | text | Número usado no botão "Falar no WhatsApp" |
 | `linkedin_url` | text | URL do perfil do LinkedIn |
 | `email` | text | E-mail de contato |
+| `google_drive_root_folder_id` | text | ID da pasta raiz do Drive em que o navegador de arquivos do editor de mockup fica travado |
 | `updated_at` | timestamp | Última atualização |
 
 ### Tabela `tracked_links`
