@@ -65,7 +65,7 @@ export function FolderMockupEditor({
       {activeSlot && (
         <DriveFolderBrowserModal
           onClose={() => setActiveSlot(null)}
-          onSelect={handleSelect}
+          onSelectFile={handleSelect}
         />
       )}
     </div>

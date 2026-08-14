@@ -6,11 +6,20 @@ type DriveItem = { id: string; name: string; isFolder: boolean };
 type Crumb = { id: string; name: string };
 
 export function DriveFolderBrowserModal({
+  mode = "file",
+  rootFolderId,
   onClose,
-  onSelect,
+  onSelectFile,
+  onSelectFolder,
 }: {
+  mode?: "file" | "folder";
+  /** Pasta em que a navegação começa. Passe "root" pra navegar o Drive
+   * inteiro (usado ao escolher a pasta raiz). Se omitido, usa a pasta raiz
+   * já configurada em Configurações (navegação travada nela). */
+  rootFolderId?: string;
   onClose: () => void;
-  onSelect: (url: string) => void;
+  onSelectFile?: (url: string) => void;
+  onSelectFolder?: (folder: { id: string; name: string }) => void;
 }) {
   const [stack, setStack] = useState<Crumb[]>([]);
   const [items, setItems] = useState<DriveItem[]>([]);
@@ -38,11 +47,16 @@ export function DriveFolderBrowserModal({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/google/drive/list");
+        const url = rootFolderId
+          ? `/api/google/drive/list?folderId=${rootFolderId}`
+          : "/api/google/drive/list";
+        const res = await fetch(url);
         const data = await res.json();
         if (!res.ok)
           throw new Error(data.error ?? "Erro ao carregar pasta raiz.");
-        setStack([{ id: data.folderId, name: "Início" }]);
+        setStack([
+          { id: data.folderId, name: rootFolderId ? "Meu Drive" : "Início" },
+        ]);
         setItems(data.items);
       } catch (err) {
         setError(
@@ -52,6 +66,7 @@ export function DriveFolderBrowserModal({
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function openFolder(item: DriveItem) {
@@ -75,7 +90,7 @@ export function DriveFolderBrowserModal({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao selecionar arquivo.");
-      onSelect(data.url);
+      onSelectFile?.(data.url);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Erro ao selecionar arquivo.",
@@ -84,6 +99,21 @@ export function DriveFolderBrowserModal({
       setSelecting(null);
     }
   }
+
+  function selectCurrentFolder() {
+    const current = stack[stack.length - 1];
+    if (current) onSelectFolder?.(current);
+  }
+
+  function handleItemClick(item: DriveItem) {
+    if (item.isFolder) {
+      openFolder(item);
+    } else if (mode === "file") {
+      selectFile(item);
+    }
+  }
+
+  const visibleItems = mode === "folder" ? items.filter((i) => i.isFolder) : items;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -117,22 +147,32 @@ export function DriveFolderBrowserModal({
           </button>
         </div>
 
+        {mode === "folder" && (
+          <button
+            type="button"
+            onClick={selectCurrentFolder}
+            className="mt-3 self-start rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            Selecionar esta pasta
+          </button>
+        )}
+
         <div className="mt-4 flex-1 overflow-y-auto">
           {loading && <p className="text-sm text-muted">Carregando...</p>}
           {error && <p className="text-sm text-danger">{error}</p>}
-          {!loading && !error && items.length === 0 && (
-            <p className="text-sm text-muted">Pasta vazia.</p>
+          {!loading && !error && visibleItems.length === 0 && (
+            <p className="text-sm text-muted">
+              {mode === "folder" ? "Nenhuma subpasta." : "Pasta vazia."}
+            </p>
           )}
           {!loading && !error && (
             <ul className="flex flex-col">
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <li key={item.id}>
                   <button
                     type="button"
                     disabled={selecting !== null}
-                    onClick={() =>
-                      item.isFolder ? openFolder(item) : selectFile(item)
-                    }
+                    onClick={() => handleItemClick(item)}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-background disabled:opacity-50"
                   >
                     <span className="text-base">

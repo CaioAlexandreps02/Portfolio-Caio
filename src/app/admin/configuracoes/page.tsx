@@ -4,6 +4,7 @@ import { getUser } from "@/lib/supabase/auth";
 import { getSiteSettings } from "@/lib/data/site-settings";
 import { getPublishedProjects } from "@/lib/data/projects";
 import { getGoogleDriveConnectionStatus } from "@/lib/google/connection";
+import { getFileName, getValidAccessToken } from "@/lib/google/drive-api";
 import { SiteSettingsForm } from "@/components/site-settings-form";
 import { FeaturedOrderList } from "@/components/featured-order-list";
 import { GoogleDriveConnectionCard } from "@/components/google-drive-connection-card";
@@ -22,6 +23,17 @@ export default async function ConfiguracoesPage() {
     .filter((p) => p.featured)
     .sort((a, b) => a.sort_order - b.sort_order);
 
+  const rootFolderId = settings?.google_drive_root_folder_id ?? null;
+  let rootFolderName: string | null = null;
+  if (googleDrive.connected && rootFolderId) {
+    try {
+      const accessToken = await getValidAccessToken();
+      rootFolderName = await getFileName(rootFolderId, accessToken);
+    } catch {
+      rootFolderName = null;
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
       <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
@@ -38,7 +50,9 @@ export default async function ConfiguracoesPage() {
             />
           </Suspense>
           <GoogleDriveRootFolderForm
-            folderId={settings?.google_drive_root_folder_id ?? null}
+            folderId={rootFolderId}
+            folderName={rootFolderName}
+            driveConnected={googleDrive.connected}
           />
         </div>
       </section>

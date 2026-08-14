@@ -78,3 +78,16 @@ export async function makeFilePublic(
 export function directViewUrl(fileId: string): string {
   return `https://drive.google.com/uc?export=view&id=${fileId}`;
 }
+
+export async function getFileName(
+  fileId: string,
+  accessToken: string,
+): Promise<string | null> {
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?fields=name`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.name ?? null;
+}
