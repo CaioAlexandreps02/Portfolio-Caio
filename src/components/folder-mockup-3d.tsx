@@ -1,10 +1,10 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, useTexture } from "@react-three/drei";
 import { useSpring, a, type SpringValue } from "@react-spring/three";
-import type { Mesh, MeshStandardMaterial } from "three";
+import { BackSide, RepeatWrapping, type Mesh, type MeshStandardMaterial } from "three";
 import type { PrintMockup } from "@/types/database";
 
 // Proporção A4 (210 x 297mm)
@@ -51,11 +51,9 @@ function InnerPanel({
 function FrontCover({
   image,
   progress,
-  onToggle,
 }: {
   image: string;
   progress: SpringValue<number>;
-  onToggle: () => void;
 }) {
   const texture = useTexture(image);
   const meshRef = useRef<Mesh>(null);
@@ -69,7 +67,7 @@ function FrontCover({
   });
 
   return (
-    <mesh ref={meshRef} position={[PANEL_WIDTH / 2, 0, 0.02]} onClick={onToggle}>
+    <mesh ref={meshRef} position={[PANEL_WIDTH / 2, 0, 0.02]}>
       <planeGeometry args={[PANEL_WIDTH, PANEL_HEIGHT]} />
       <meshStandardMaterial
         ref={materialRef}
@@ -84,43 +82,48 @@ function FrontCover({
 }
 
 /**
- * Contra-capa — mesma posição da capa, virada pra trás (-Z). Só aparece pra
- * quem orbitar a câmera pra olhar o mockup por detrás; invisível de frente
- * porque usa o lado padrão (FrontSide) já rotacionado 180°.
+ * Contra-capa — mesma posição/orientação da capa, só que atrás (-Z) e
+ * usando o lado de dentro do material (BackSide) pra só aparecer pra quem
+ * orbitar a câmera por detrás — sem precisar rotacionar a malha. Ver algo
+ * pelo lado de dentro de um plano sempre espelha a textura horizontalmente
+ * (é assim que espelhos/vidro funcionam), então cancela isso invertendo o
+ * eixo U da própria textura.
  */
 function BackCover({
   image,
   progress,
-  onToggle,
 }: {
   image: string;
   progress: SpringValue<number>;
-  onToggle: () => void;
 }) {
   const texture = useTexture(image);
   const meshRef = useRef<Mesh>(null);
   const materialRef = useRef<MeshStandardMaterial>(null);
 
+  // Mutação imperativa intencional — é assim que se configura um
+  // THREE.Texture depois de carregado, não é estado do React.
+  /* eslint-disable react-hooks/immutability */
+  useEffect(() => {
+    texture.wrapS = RepeatWrapping;
+    texture.repeat.x = -1;
+    texture.needsUpdate = true;
+  }, [texture]);
+  /* eslint-enable react-hooks/immutability */
+
   useFrame(() => {
     if (!materialRef.current || !meshRef.current) return;
     const p = progress.get();
     materialRef.current.opacity = p;
-    const visible = p > 0.05;
-    // escala.x negativa cancela o espelhamento da rotação de 180° no Y
-    meshRef.current.scale.set(visible ? -1 : 0, visible ? 1 : 0, 1);
+    meshRef.current.scale.setScalar(p > 0.05 ? 1 : 0);
   });
 
   return (
-    <mesh
-      ref={meshRef}
-      position={[PANEL_WIDTH / 2, 0, -0.02]}
-      rotation={[0, Math.PI, 0]}
-      onClick={onToggle}
-    >
+    <mesh ref={meshRef} position={[PANEL_WIDTH / 2, 0, -0.02]}>
       <planeGeometry args={[PANEL_WIDTH, PANEL_HEIGHT]} />
       <meshStandardMaterial
         ref={materialRef}
         map={texture}
+        side={BackSide}
         roughness={0.85}
         transparent
         opacity={1}
@@ -149,11 +152,32 @@ function Scene({
       -PANEL_WIDTH / 2 - (totalWidth - PANEL_WIDTH) * (1 - p) * 0.5,
   );
 
+  // Distingue clique de arrasto (orbitar a câmera) — sem isso, soltar o
+  // mouse depois de girar a câmera em cima do folder também alterna
+  // aberto/fechado, porque o pointerup acontece sobre a malha.
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
+
+  function handlePointerDown(e: ThreeEvent<PointerEvent>) {
+    pointerDownPos.current = { x: e.clientX, y: e.clientY };
+  }
+
+  function handlePointerUp(e: ThreeEvent<PointerEvent>) {
+    const start = pointerDownPos.current;
+    pointerDownPos.current = null;
+    if (!start) return;
+    const distance = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+    if (distance < 5) onToggle();
+  }
+
   return (
     <>
       <ambientLight intensity={1.1} />
       <directionalLight position={[2, 3, 4]} intensity={1.2} />
-      <a.group position-x={groupX} onClick={onToggle}>
+      <a.group
+        position-x={groupX}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+      >
         <InnerPanel image={textureUrl(mockup.inner_left)} x={PANEL_WIDTH / 2} />
         <group position={[PANEL_WIDTH, 0, 0]}>
           <InnerPanel
@@ -162,16 +186,8 @@ function Scene({
             hinge={progress}
           />
         </group>
-        <FrontCover
-          image={textureUrl(mockup.front_cover)}
-          progress={progress}
-          onToggle={onToggle}
-        />
-        <BackCover
-          image={textureUrl(mockup.back_cover)}
-          progress={progress}
-          onToggle={onToggle}
-        />
+        <FrontCover image={textureUrl(mockup.front_cover)} progress={progress} />
+        <BackCover image={textureUrl(mockup.back_cover)} progress={progress} />
       </a.group>
     </>
   );
