@@ -11,6 +11,13 @@ import type { PrintMockup } from "@/types/database";
 const PANEL_WIDTH = 1.41;
 const PANEL_HEIGHT = 2;
 
+// Dobra (dobradiça) fica sempre no meio do spread aberto. A página da
+// direita (inner_right) é a âncora fixa; a da esquerda (inner_left) gira
+// sobre essa dobra ao fechar, convergindo pro lado direito — onde capa e
+// contra-capa moram.
+const HINGE_X = PANEL_WIDTH;
+const ANCHOR_X = PANEL_WIDTH * 1.5;
+
 /**
  * Artes de impressão vêm em alta resolução (300dpi, várias vezes >5MB) —
  * usar isso cru como textura 3D pode passar de 100MB de VRAM só nesses 4
@@ -23,14 +30,21 @@ function textureUrl(url: string): string {
   return `/_next/image?url=${encodeURIComponent(url)}&w=828&q=75`;
 }
 
-/** Painel interno (aberto) — inner_left é a âncora fixa, inner_right dobra sobre ela ao fechar. */
+/**
+ * Painel interno. `pivotX` é onde o grupo (fixo ou giratório) fica
+ * ancorado no mundo; `x` é o deslocamento do painel dentro desse grupo.
+ * Sem `hinge`, é a página fixa; com `hinge`, gira em torno de `pivotX`
+ * ao fechar.
+ */
 function InnerPanel({
   image,
   x,
+  pivotX = 0,
   hinge,
 }: {
   image: string;
   x: number;
+  pivotX?: number;
   hinge?: SpringValue<number>;
 }) {
   const texture = useTexture(image);
@@ -44,10 +58,14 @@ function InnerPanel({
     </mesh>
   );
 
-  if (!hinge) return mesh;
+  if (!hinge) return <group position={[pivotX, 0, 0]}>{mesh}</group>;
 
   const rotationY = hinge.to((p: number) => p * Math.PI);
-  return <a.group rotation-y={rotationY}>{mesh}</a.group>;
+  return (
+    <a.group position={[pivotX, 0, 0]} rotation-y={rotationY}>
+      {mesh}
+    </a.group>
+  );
 }
 
 /** Capa (fechado) — visível de frente, some ao abrir. */
@@ -70,7 +88,7 @@ function FrontCover({
   });
 
   return (
-    <mesh ref={meshRef} position={[PANEL_WIDTH / 2, 0, 0.02]}>
+    <mesh ref={meshRef} position={[ANCHOR_X, 0, 0.02]}>
       <planeGeometry args={[PANEL_WIDTH, PANEL_HEIGHT]} />
       <meshStandardMaterial
         ref={materialRef}
@@ -91,17 +109,15 @@ function FrontCover({
  * pelo lado de dentro de um plano sempre espelha a textura horizontalmente
  * (é assim que espelhos/vidro funcionam), então cancela isso invertendo o
  * eixo U da própria textura.
+ *
+ * Diferente da capa, fica sempre visível (não só quando fechado): por
+ * estar atrás de tudo, quem olha de frente nunca a vê (a capa ou as
+ * páginas internas, mais perto da câmera, cobrem ela); só aparece pra
+ * quem orbitar a câmera pra trás — inclusive com o folder aberto, pra
+ * não ficar uma tela vazia nesse ângulo.
  */
-function BackCover({
-  image,
-  progress,
-}: {
-  image: string;
-  progress: SpringValue<number>;
-}) {
+function BackCover({ image }: { image: string }) {
   const texture = useTexture(image);
-  const meshRef = useRef<Mesh>(null);
-  const materialRef = useRef<MeshStandardMaterial>(null);
 
   // Mutação imperativa intencional — é assim que se configura um
   // THREE.Texture depois de carregado, não é estado do React.
@@ -113,24 +129,10 @@ function BackCover({
   }, [texture]);
   /* eslint-enable react-hooks/immutability */
 
-  useFrame(() => {
-    if (!materialRef.current || !meshRef.current) return;
-    const p = progress.get();
-    materialRef.current.opacity = p;
-    meshRef.current.scale.setScalar(p > 0.05 ? 1 : 0);
-  });
-
   return (
-    <mesh ref={meshRef} position={[PANEL_WIDTH / 2, 0, -0.02]}>
+    <mesh position={[ANCHOR_X, 0, -0.02]}>
       <planeGeometry args={[PANEL_WIDTH, PANEL_HEIGHT]} />
-      <meshStandardMaterial
-        ref={materialRef}
-        map={texture}
-        side={BackSide}
-        roughness={0.85}
-        transparent
-        opacity={1}
-      />
+      <meshStandardMaterial map={texture} side={BackSide} roughness={0.85} />
     </mesh>
   );
 }
@@ -149,10 +151,10 @@ function Scene({
     config: { mass: 2, tension: 170, friction: 26 },
   });
 
-  const totalWidth = PANEL_WIDTH * 2;
+  // Recentraliza o grupo: fechado, centraliza a âncora (onde tudo
+  // converge); aberto, centraliza a dobra do meio do spread.
   const groupX = progress.to(
-    (p: number) =>
-      -PANEL_WIDTH / 2 - (totalWidth - PANEL_WIDTH) * (1 - p) * 0.5,
+    (p: number) => -ANCHOR_X * p - PANEL_WIDTH * (1 - p),
   );
 
   // Distingue clique de arrasto (orbitar a câmera) — sem isso, soltar o
@@ -181,16 +183,19 @@ function Scene({
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
       >
-        <InnerPanel image={textureUrl(mockup.inner_left)} x={PANEL_WIDTH / 2} />
-        <group position={[PANEL_WIDTH, 0, 0]}>
-          <InnerPanel
-            image={textureUrl(mockup.inner_right)}
-            x={PANEL_WIDTH / 2}
-            hinge={progress}
-          />
-        </group>
+        <InnerPanel
+          image={textureUrl(mockup.inner_right)}
+          x={0}
+          pivotX={ANCHOR_X}
+        />
+        <InnerPanel
+          image={textureUrl(mockup.inner_left)}
+          x={-PANEL_WIDTH / 2}
+          pivotX={HINGE_X}
+          hinge={progress}
+        />
         <FrontCover image={textureUrl(mockup.front_cover)} progress={progress} />
-        <BackCover image={textureUrl(mockup.back_cover)} progress={progress} />
+        <BackCover image={textureUrl(mockup.back_cover)} />
       </a.group>
     </>
   );
