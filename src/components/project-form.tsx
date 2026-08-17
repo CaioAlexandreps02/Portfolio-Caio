@@ -179,7 +179,6 @@ export function ProjectForm({ project }: { project?: Project }) {
         await createProject(payload);
       }
       router.push(`/projetos/${payload.slug}`);
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao salvar.");
       setSaving(false);
@@ -194,7 +193,6 @@ export function ProjectForm({ project }: { project?: Project }) {
     try {
       await deleteProject(project.id);
       router.push("/");
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao excluir.");
       setSaving(false);

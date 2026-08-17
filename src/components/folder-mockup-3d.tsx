@@ -11,6 +11,17 @@ import type { PrintMockup } from "@/types/database";
 const PANEL_WIDTH = 1.41;
 const PANEL_HEIGHT = 2;
 
+/**
+ * Artes de impressão vêm em alta resolução (300dpi, várias vezes >5MB) —
+ * usar isso cru como textura 3D pode passar de 100MB de VRAM só nesses 4
+ * painéis e derrubar a aba em GPUs mais fracas. Reaproveita o otimizador
+ * de imagem do próprio Next.js pra baixar uma versão bem menor antes de
+ * virar textura.
+ */
+function textureUrl(url: string): string {
+  return `/_next/image?url=${encodeURIComponent(url)}&w=1024&q=75`;
+}
+
 /** Painel interno (aberto) — inner_left é a âncora fixa, inner_right dobra sobre ela ao fechar. */
 function InnerPanel({
   image,
@@ -140,12 +151,24 @@ function Scene({
       <ambientLight intensity={1.1} />
       <directionalLight position={[2, 3, 4]} intensity={1.2} />
       <a.group position-x={groupX} onClick={onToggle}>
-        <InnerPanel image={mockup.inner_left} x={PANEL_WIDTH / 2} />
+        <InnerPanel image={textureUrl(mockup.inner_left)} x={PANEL_WIDTH / 2} />
         <group position={[PANEL_WIDTH, 0, 0]}>
-          <InnerPanel image={mockup.inner_right} x={PANEL_WIDTH / 2} hinge={progress} />
+          <InnerPanel
+            image={textureUrl(mockup.inner_right)}
+            x={PANEL_WIDTH / 2}
+            hinge={progress}
+          />
         </group>
-        <FrontCover image={mockup.front_cover} progress={progress} onToggle={onToggle} />
-        <BackCover image={mockup.back_cover} progress={progress} onToggle={onToggle} />
+        <FrontCover
+          image={textureUrl(mockup.front_cover)}
+          progress={progress}
+          onToggle={onToggle}
+        />
+        <BackCover
+          image={textureUrl(mockup.back_cover)}
+          progress={progress}
+          onToggle={onToggle}
+        />
       </a.group>
     </>
   );
