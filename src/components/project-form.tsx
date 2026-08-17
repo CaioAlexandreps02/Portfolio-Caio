@@ -11,7 +11,11 @@ import type {
   ProjectSubcategory,
   ProjectType,
 } from "@/types/database";
-import { PROJECT_TYPE_LABELS, PROJECT_TYPES } from "@/lib/project-types";
+import {
+  PROJECT_TYPE_LABELS,
+  PROJECT_TYPES,
+  STATUS_LABELS,
+} from "@/lib/project-types";
 import { slugify } from "@/lib/slug";
 import { driveShareLinkToDirectUrl } from "@/lib/drive";
 import { toYoutubeEmbedUrl } from "@/lib/youtube";
@@ -22,12 +26,6 @@ import {
   type ProjectFormPayload,
 } from "@/lib/actions/projects";
 import { FolderMockupEditor } from "@/components/folder-mockup-editor";
-
-const STATUS_LABELS: Record<ProjectStatus, string> = {
-  draft: "Rascunho",
-  published: "Publicado",
-  archived: "Arquivado",
-};
 
 const SUBCATEGORY_LABELS: Record<ProjectSubcategory, string> = {
   impressos: "Impressos",

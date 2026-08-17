@@ -36,6 +36,12 @@ export async function Navbar() {
           {user ? (
             <>
               <Link
+                href="/admin/projetos"
+                className="hidden text-sm text-muted transition-colors hover:text-foreground lg:block"
+              >
+                Gerenciar projetos
+              </Link>
+              <Link
                 href="/admin/configuracoes"
                 className="hidden text-sm text-muted transition-colors hover:text-foreground lg:block"
               >

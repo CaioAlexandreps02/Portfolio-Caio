@@ -1,4 +1,4 @@
-import type { ProjectType } from "@/types/database";
+import type { ProjectStatus, ProjectType } from "@/types/database";
 
 export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   design: "Design Gráfico",
@@ -15,3 +15,9 @@ export const PROJECT_TYPES: ProjectType[] = [
   "sites",
   "social_media",
 ];
+
+export const STATUS_LABELS: Record<ProjectStatus, string> = {
+  draft: "Rascunho",
+  published: "Publicado",
+  archived: "Arquivado",
+};

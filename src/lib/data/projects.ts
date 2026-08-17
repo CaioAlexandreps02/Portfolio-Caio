@@ -25,6 +25,22 @@ export async function getPublishedProjects(): Promise<Project[]> {
   }
 }
 
+/** Todos os projetos (qualquer status), pra tela de admin /admin/projetos. */
+export async function getAllProjects(): Promise<Project[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data;
+  } catch {
+    return [];
+  }
+}
+
 /** Lista simplificada pra uso em admin (seletor de projeto associado a um link, etc). */
 export async function getAllProjectsForAdmin(): Promise<
   Pick<Project, "id" | "slug" | "title">[]

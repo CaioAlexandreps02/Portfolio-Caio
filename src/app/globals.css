@@ -136,6 +136,49 @@ p {
     linear-gradient(135deg, oklch(0.34 0.22 260), oklch(0.16 0.07 258));
 }
 
+@keyframes modal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-modal-fade {
+  animation: modal-fade 0.28s ease both;
+}
+
+.animate-modal-pop {
+  animation: modal-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-modal-rise {
+  animation: modal-rise 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

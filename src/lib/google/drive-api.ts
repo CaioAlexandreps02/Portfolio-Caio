@@ -9,12 +9,29 @@ export type DriveItem = {
   isFolder: boolean;
 };
 
+let cachedToken: { token: string; expiresAt: number } | null = null;
+
+/**
+ * O access token dura ~1h — cachear em memória entre chamadas evita
+ * renovar via Google a cada clique no navegador de pastas (list,
+ * thumbnail e select acontecem em sequência rápida). O cache é por
+ * instância de servidor (some em cold start), o que já basta pra
+ * eliminar a maior parte da latência dentro de uma mesma sessão de uso.
+ */
 export async function getValidAccessToken(): Promise<string> {
+  if (cachedToken && cachedToken.expiresAt > Date.now()) {
+    return cachedToken.token;
+  }
+
   const refreshToken = await getStoredRefreshToken();
   if (!refreshToken) {
     throw new Error("Google Drive não conectado. Conecte em Configurações.");
   }
-  const { access_token } = await refreshAccessToken(refreshToken);
+  const { access_token, expires_in } = await refreshAccessToken(refreshToken);
+  cachedToken = {
+    token: access_token,
+    expiresAt: Date.now() + (expires_in - 60) * 1000,
+  };
   return access_token;
 }
 
