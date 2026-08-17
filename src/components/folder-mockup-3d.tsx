@@ -37,7 +37,10 @@ function InnerPanel({
   const mesh = (
     <mesh position={[x, 0, 0]}>
       <planeGeometry args={[PANEL_WIDTH, PANEL_HEIGHT]} />
-      <meshStandardMaterial map={texture} side={2} roughness={0.85} />
+      {/* Só de frente — vendo por trás (orbitando a câmera) apareceria
+       * espelhada, e a capa já cobre a tela bem antes de a página
+       * terminar de girar no fechamento. */}
+      <meshStandardMaterial map={texture} roughness={0.85} />
     </mesh>
   );
 
