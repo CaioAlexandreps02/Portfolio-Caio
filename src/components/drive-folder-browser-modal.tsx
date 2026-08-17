@@ -117,7 +117,7 @@ export function DriveFolderBrowserModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-xl border border-border bg-surface p-4">
+      <div className="flex max-h-[80vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-surface p-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-1 text-sm">
             {stack.map((crumb, index) => (
@@ -166,28 +166,40 @@ export function DriveFolderBrowserModal({
             </p>
           )}
           {!loading && !error && (
-            <ul className="flex flex-col">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
               {visibleItems.map((item) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    disabled={selecting !== null}
-                    onClick={() => handleItemClick(item)}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-background disabled:opacity-50"
-                  >
-                    <span className="text-base">
-                      {item.isFolder ? "📁" : "🖼️"}
-                    </span>
-                    <span className="flex-1 truncate">{item.name}</span>
-                    {selecting === item.id && (
-                      <span className="text-xs text-muted">
-                        Selecionando...
-                      </span>
+                <button
+                  key={item.id}
+                  type="button"
+                  disabled={selecting !== null}
+                  onClick={() => handleItemClick(item)}
+                  className="flex flex-col items-center gap-1.5 rounded-lg p-2 text-center hover:bg-background disabled:opacity-50"
+                >
+                  <span className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg bg-background text-2xl">
+                    {item.isFolder ? (
+                      "📁"
+                    ) : (
+                      <>
+                        <span>🖼️</span>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`/api/google/drive/thumbnail?fileId=${item.id}`}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover"
+                          onError={(e) => e.currentTarget.remove()}
+                        />
+                      </>
                     )}
-                  </button>
-                </li>
+                  </span>
+                  <span className="w-full truncate text-xs">{item.name}</span>
+                  {selecting === item.id && (
+                    <span className="text-[10px] text-muted">
+                      Selecionando...
+                    </span>
+                  )}
+                </button>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>
