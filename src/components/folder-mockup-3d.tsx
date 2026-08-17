@@ -16,10 +16,11 @@ const PANEL_HEIGHT = 2;
  * usar isso cru como textura 3D pode passar de 100MB de VRAM só nesses 4
  * painéis e derrubar a aba em GPUs mais fracas. Reaproveita o otimizador
  * de imagem do próprio Next.js pra baixar uma versão bem menor antes de
- * virar textura.
+ * virar textura. 828 precisa ser um dos tamanhos em `images.deviceSizes`
+ * (padrão do Next) — outro valor faz o otimizador devolver 400.
  */
 function textureUrl(url: string): string {
-  return `/_next/image?url=${encodeURIComponent(url)}&w=1024&q=75`;
+  return `/_next/image?url=${encodeURIComponent(url)}&w=828&q=75`;
 }
 
 /** Painel interno (aberto) — inner_left é a âncora fixa, inner_right dobra sobre ela ao fechar. */
@@ -61,9 +62,10 @@ function FrontCover({
   const materialRef = useRef<MeshStandardMaterial>(null);
 
   useFrame(() => {
+    if (!materialRef.current || !meshRef.current) return;
     const p = progress.get();
-    materialRef.current!.opacity = p;
-    meshRef.current!.scale.setScalar(p > 0.05 ? 1 : 0);
+    materialRef.current.opacity = p;
+    meshRef.current.scale.setScalar(p > 0.05 ? 1 : 0);
   });
 
   return (
@@ -100,11 +102,12 @@ function BackCover({
   const materialRef = useRef<MeshStandardMaterial>(null);
 
   useFrame(() => {
+    if (!materialRef.current || !meshRef.current) return;
     const p = progress.get();
-    materialRef.current!.opacity = p;
+    materialRef.current.opacity = p;
     const visible = p > 0.05;
     // escala.x negativa cancela o espelhamento da rotação de 180° no Y
-    meshRef.current!.scale.set(visible ? -1 : 0, visible ? 1 : 0, 1);
+    meshRef.current.scale.set(visible ? -1 : 0, visible ? 1 : 0, 1);
   });
 
   return (
