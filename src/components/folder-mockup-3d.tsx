@@ -1,10 +1,10 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
+import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, useTexture } from "@react-three/drei";
 import { useSpring, a, type SpringValue } from "@react-spring/three";
-import { BackSide, RepeatWrapping, type Mesh, type MeshStandardMaterial } from "three";
+import { BackSide, RepeatWrapping } from "three";
 import type { PrintMockup } from "@/types/database";
 
 // Proporção A4 (210 x 297mm)
@@ -12,9 +12,9 @@ const PANEL_WIDTH = 1.41;
 const PANEL_HEIGHT = 2;
 
 // Dobra (dobradiça) fica sempre no meio do spread aberto. A página da
-// direita (inner_right) é a âncora fixa; a da esquerda (inner_left) gira
-// sobre essa dobra ao fechar, convergindo pro lado direito — onde capa e
-// contra-capa moram.
+// direita (inner_right) é a âncora fixa; a da esquerda (inner_left) e a
+// capa giram sobre essa dobra ao abrir/fechar, convergindo pro lado
+// direito — onde a contra-capa mora (fixa, igual a âncora).
 const HINGE_X = PANEL_WIDTH;
 const ANCHOR_X = PANEL_WIDTH * 1.5;
 
@@ -31,36 +31,45 @@ function textureUrl(url: string): string {
 }
 
 /**
- * Painel interno. `pivotX` é onde o grupo (fixo ou giratório) fica
- * ancorado no mundo; `x` é o deslocamento do painel dentro desse grupo.
- * Sem `hinge`, é a página fixa; com `hinge`, gira em torno de `pivotX`
- * ao fechar.
+ * Painel que gira numa dobradiça (ou fica fixo, sem `hinge`). `pivotX` é
+ * onde o grupo fica ancorado no mundo; `x`/`z` são o deslocamento do
+ * painel dentro desse grupo. Usado tanto pras páginas internas quanto
+ * pra capa (que gira igual uma página, terminando encostada atrás
+ * quando aberta — por isso aparece por trás nesse estado, como a capa
+ * de um livro de verdade aberto até o fim).
+ *
+ * Só renderiza de frente (lado padrão) — vendo por trás apareceria
+ * espelhado, e o painel fixo/a contra-capa já cobrem a tela nos ângulos
+ * onde isso importaria.
  */
-function InnerPanel({
+function Panel({
   image,
   x,
+  z = 0,
   pivotX = 0,
   hinge,
+  invertHinge = false,
 }: {
   image: string;
   x: number;
+  z?: number;
   pivotX?: number;
   hinge?: SpringValue<number>;
+  invertHinge?: boolean;
 }) {
   const texture = useTexture(image);
   const mesh = (
-    <mesh position={[x, 0, 0]}>
+    <mesh position={[x, 0, z]}>
       <planeGeometry args={[PANEL_WIDTH, PANEL_HEIGHT]} />
-      {/* Só de frente — vendo por trás (orbitando a câmera) apareceria
-       * espelhada, e a capa já cobre a tela bem antes de a página
-       * terminar de girar no fechamento. */}
       <meshStandardMaterial map={texture} roughness={0.85} />
     </mesh>
   );
 
   if (!hinge) return <group position={[pivotX, 0, 0]}>{mesh}</group>;
 
-  const rotationY = hinge.to((p: number) => p * Math.PI);
+  const rotationY = hinge.to(
+    (p: number) => (invertHinge ? 1 - p : p) * Math.PI,
+  );
   return (
     <a.group position={[pivotX, 0, 0]} rotation-y={rotationY}>
       {mesh}
@@ -68,53 +77,17 @@ function InnerPanel({
   );
 }
 
-/** Capa (fechado) — visível de frente, some ao abrir. */
-function FrontCover({
-  image,
-  progress,
-}: {
-  image: string;
-  progress: SpringValue<number>;
-}) {
-  const texture = useTexture(image);
-  const meshRef = useRef<Mesh>(null);
-  const materialRef = useRef<MeshStandardMaterial>(null);
-
-  useFrame(() => {
-    if (!materialRef.current || !meshRef.current) return;
-    const p = progress.get();
-    materialRef.current.opacity = p;
-    meshRef.current.scale.setScalar(p > 0.05 ? 1 : 0);
-  });
-
-  return (
-    <mesh ref={meshRef} position={[ANCHOR_X, 0, 0.02]}>
-      <planeGeometry args={[PANEL_WIDTH, PANEL_HEIGHT]} />
-      <meshStandardMaterial
-        ref={materialRef}
-        map={texture}
-        side={2}
-        roughness={0.85}
-        transparent
-        opacity={1}
-      />
-    </mesh>
-  );
-}
-
 /**
- * Contra-capa — mesma posição/orientação da capa, só que atrás (-Z) e
+ * Contra-capa — fixa junto com a página âncora, virada pra trás (-Z) e
  * usando o lado de dentro do material (BackSide) pra só aparecer pra quem
  * orbitar a câmera por detrás — sem precisar rotacionar a malha. Ver algo
  * pelo lado de dentro de um plano sempre espelha a textura horizontalmente
  * (é assim que espelhos/vidro funcionam), então cancela isso invertendo o
  * eixo U da própria textura.
  *
- * Diferente da capa, fica sempre visível (não só quando fechado): por
- * estar atrás de tudo, quem olha de frente nunca a vê (a capa ou as
- * páginas internas, mais perto da câmera, cobrem ela); só aparece pra
- * quem orbitar a câmera pra trás — inclusive com o folder aberto, pra
- * não ficar uma tela vazia nesse ângulo.
+ * Fica sempre visível (aberto ou fechado): por estar atrás de tudo, quem
+ * olha de frente nunca a vê (a página âncora, mais perto da câmera,
+ * cobre ela); só aparece pra quem orbitar a câmera pra trás.
  */
 function BackCover({ image }: { image: string }) {
   const texture = useTexture(image);
@@ -183,18 +156,26 @@ function Scene({
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
       >
-        <InnerPanel
-          image={textureUrl(mockup.inner_right)}
-          x={0}
-          pivotX={ANCHOR_X}
-        />
-        <InnerPanel
+        <Panel image={textureUrl(mockup.inner_right)} x={0} pivotX={ANCHOR_X} />
+        <Panel
           image={textureUrl(mockup.inner_left)}
           x={-PANEL_WIDTH / 2}
           pivotX={HINGE_X}
           hinge={progress}
         />
-        <FrontCover image={textureUrl(mockup.front_cover)} progress={progress} />
+        {/* A capa gira junto com a página interna esquerda, na mesma
+         * dobra, só que na fase invertida: fechada (progress=1) fica
+         * lisa cobrindo a âncora; aberta (progress=0) termina virada
+         * 180°, encostada atrás — por isso passa a aparecer pra quem
+         * orbita a câmera por trás, junto com a contra-capa. */}
+        <Panel
+          image={textureUrl(mockup.front_cover)}
+          x={PANEL_WIDTH / 2}
+          z={0.02}
+          pivotX={HINGE_X}
+          hinge={progress}
+          invertHinge
+        />
         <BackCover image={textureUrl(mockup.back_cover)} />
       </a.group>
     </>
