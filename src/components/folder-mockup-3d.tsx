@@ -27,6 +27,7 @@ const ANCHOR_X = PANEL_WIDTH * 1.5;
  * (padrão do Next) — outro valor faz o otimizador devolver 400.
  */
 function textureUrl(url: string): string {
+  if (url.startsWith("data:")) return url;
   return `/_next/image?url=${encodeURIComponent(url)}&w=828&q=75`;
 }
 
@@ -182,11 +183,24 @@ function Scene({
   );
 }
 
-export function FolderMockup3D({ mockup }: { mockup: PrintMockup }) {
+export function FolderMockup3D({
+  mockup,
+  variant = "default",
+}: {
+  mockup: PrintMockup;
+  variant?: "default" | "showcase";
+}) {
   const [open, setOpen] = useState(false);
+  const isShowcase = variant === "showcase";
 
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-border bg-surface [&_canvas]:!h-full [&_canvas]:!w-full">
+    <div
+      className={`relative aspect-[4/3] w-full overflow-hidden [&_canvas]:!h-full [&_canvas]:!w-full ${
+        isShowcase
+          ? "rounded-[8px] bg-transparent"
+          : "rounded-xl border border-border bg-surface"
+      }`}
+    >
       <Canvas camera={{ position: [0, 0, 4.2], fov: 40 }}>
         <Suspense fallback={null}>
           <Scene mockup={mockup} open={open} onToggle={() => setOpen((v) => !v)} />
@@ -202,7 +216,11 @@ export function FolderMockup3D({ mockup }: { mockup: PrintMockup }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+        className={`absolute bottom-4 left-1/2 -translate-x-1/2 text-sm font-semibold transition-colors ${
+          isShowcase
+            ? "rounded-[6px] border border-white/14 bg-primary px-5 py-3 text-primary-foreground shadow-[0_8px_20px_oklch(0.18_0.12_260/0.28)] hover:bg-accent hover:text-background"
+            : "rounded-full bg-primary px-5 py-2 text-primary-foreground hover:opacity-90"
+        }`}
       >
         {open ? "Fechar" : "Abrir"}
       </button>
