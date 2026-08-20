@@ -5,6 +5,7 @@ import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, useTexture } from "@react-three/drei";
 import { useSpring, a, type SpringValue } from "@react-spring/three";
 import { BackSide, RepeatWrapping } from "three";
+import { driveImageProxyUrl } from "@/lib/drive";
 import type { PrintMockup } from "@/types/database";
 
 // Proporção A4 (210 x 297mm)
@@ -28,6 +29,7 @@ const ANCHOR_X = PANEL_WIDTH * 1.5;
  */
 function textureUrl(url: string): string {
   if (url.startsWith("data:")) return url;
+  if (url.includes("drive.google.com")) return driveImageProxyUrl(url);
   return `/_next/image?url=${encodeURIComponent(url)}&w=828&q=75`;
 }
 

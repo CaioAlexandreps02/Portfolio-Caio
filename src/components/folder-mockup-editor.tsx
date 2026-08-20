@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { DriveFolderBrowserModal } from "@/components/drive-folder-browser-modal";
+import { driveImageProxyUrl } from "@/lib/drive";
 import type { PrintMockup } from "@/types/database";
 
 type Slot = keyof PrintMockup;
@@ -87,7 +88,12 @@ function SlotBox({
     <div className="relative aspect-[0.707] overflow-hidden rounded-lg border border-dashed border-border bg-background">
       {value ? (
         <>
-          <Image src={value} alt={label} fill className="object-cover" />
+          <Image
+            src={driveImageProxyUrl(value)}
+            alt={label}
+            fill
+            className="object-cover"
+          />
           <button
             type="button"
             onClick={onClear}

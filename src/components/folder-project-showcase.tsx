@@ -14,6 +14,7 @@ import {
   ZoomIn,
 } from "lucide-react";
 import { PROJECT_TYPE_LABELS } from "@/lib/project-types";
+import { driveImageProxyUrl } from "@/lib/drive";
 import { FolderMockup3D } from "@/components/folder-mockup-3d";
 import type { PrintMockup, Project } from "@/types/database";
 
@@ -23,8 +24,7 @@ type FolderFace = {
 };
 
 function imageSrc(url: string): string {
-  if (url.startsWith("data:")) return url;
-  return `/_next/image?url=${encodeURIComponent(url)}&w=1200&q=82`;
+  return driveImageProxyUrl(url);
 }
 
 export function FolderProjectShowcase({

@@ -8,10 +8,27 @@ export function driveShareLinkToDirectUrl(url: string): string {
   const trimmed = url.trim();
   if (!trimmed) return trimmed;
 
+  const fileId = extractDriveFileId(trimmed);
+
+  if (!fileId) return trimmed;
+
+  return `https://drive.google.com/uc?export=view&id=${fileId}`;
+}
+
+export function extractDriveFileId(url: string): string | null {
+  const trimmed = url.trim();
   const fileIdMatch =
-    trimmed.match(/\/file\/d\/([^/]+)/) ?? trimmed.match(/[?&]id=([^&]+)/);
+    trimmed.match(/\/file\/d\/([^/?#]+)/) ??
+    trimmed.match(/[?&]id=([^&#]+)/);
 
-  if (!fileIdMatch) return trimmed;
+  return fileIdMatch?.[1] ?? null;
+}
 
-  return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+export function driveImageProxyUrl(url: string): string {
+  if (url.startsWith("data:") || url.startsWith("/")) return url;
+
+  const fileId = extractDriveFileId(url);
+  if (!fileId) return url;
+
+  return `/api/google/drive/image?fileId=${encodeURIComponent(fileId)}`;
 }

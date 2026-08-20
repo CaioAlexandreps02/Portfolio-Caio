@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import { driveImageProxyUrl } from "@/lib/drive";
 
 export function Gallery({ images }: { images: string[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -41,7 +42,12 @@ export function Gallery({ images }: { images: string[] }) {
             onClick={() => setOpenIndex(i)}
             className="relative aspect-video w-56 shrink-0 snap-start overflow-hidden rounded-lg bg-surface"
           >
-            <Image src={url} alt="" fill className="object-cover" />
+            <Image
+              src={driveImageProxyUrl(url)}
+              alt=""
+              fill
+              className="object-cover"
+            />
           </button>
         ))}
       </div>
@@ -81,7 +87,7 @@ export function Gallery({ images }: { images: string[] }) {
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={images[openIndex]}
+              src={driveImageProxyUrl(images[openIndex])}
               alt=""
               fill
               className="object-contain"
