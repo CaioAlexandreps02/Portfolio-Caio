@@ -186,12 +186,25 @@ function Scene({
 export function FolderMockup3D({
   mockup,
   variant = "default",
+  open: controlledOpen,
+  onOpenChange,
+  showToggleButton = true,
 }: {
   mockup: PrintMockup;
   variant?: "default" | "showcase";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showToggleButton?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const isShowcase = variant === "showcase";
+  const open = controlledOpen ?? uncontrolledOpen;
+
+  function toggleOpen() {
+    const nextOpen = !open;
+    setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  }
 
   return (
     <div
@@ -203,7 +216,7 @@ export function FolderMockup3D({
     >
       <Canvas camera={{ position: [0, 0, 4.2], fov: 40 }}>
         <Suspense fallback={null}>
-          <Scene mockup={mockup} open={open} onToggle={() => setOpen((v) => !v)} />
+          <Scene mockup={mockup} open={open} onToggle={toggleOpen} />
         </Suspense>
         <OrbitControls
           enablePan={false}
@@ -213,17 +226,19 @@ export function FolderMockup3D({
           maxPolarAngle={Math.PI / 1.7}
         />
       </Canvas>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`absolute bottom-4 left-1/2 -translate-x-1/2 text-sm font-semibold transition-colors ${
-          isShowcase
-            ? "rounded-[6px] border border-white/14 bg-primary px-5 py-3 text-primary-foreground shadow-[0_8px_20px_oklch(0.18_0.12_260/0.28)] hover:bg-accent hover:text-background"
-            : "rounded-full bg-primary px-5 py-2 text-primary-foreground hover:opacity-90"
-        }`}
-      >
-        {open ? "Fechar" : "Abrir"}
-      </button>
+      {showToggleButton && (
+        <button
+          type="button"
+          onClick={toggleOpen}
+          className={`absolute bottom-4 left-1/2 -translate-x-1/2 text-sm font-semibold transition-colors ${
+            isShowcase
+              ? "rounded-[6px] border border-white/14 bg-primary px-5 py-3 text-primary-foreground shadow-[0_8px_20px_oklch(0.18_0.12_260/0.28)] hover:bg-accent hover:text-background"
+              : "rounded-full bg-primary px-5 py-2 text-primary-foreground hover:opacity-90"
+          }`}
+        >
+          {open ? "Fechar" : "Abrir"}
+        </button>
+      )}
     </div>
   );
 }
